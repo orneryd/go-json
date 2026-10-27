@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/goccy/go-json/internal/runtime"
+	"github.com/orneryd/go-json/internal/runtime"
 )
 
 // The decoder of a type is compiled by every goroutine which decodes the type for the first time at the same

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"unsafe"
 
-	"github.com/goccy/go-json/internal/errors"
+	"github.com/orneryd/go-json/internal/errors"
 )
 
 // newTypeError returns the type error as encoding/json before Go 1.27, and with GOEXPERIMENT=nojsonv2, reports

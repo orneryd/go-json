@@ -15,8 +15,8 @@ import (
 	"unicode/utf8"
 	"unsafe"
 
-	"github.com/goccy/go-json/internal/errors"
-	"github.com/goccy/go-json/internal/runtime"
+	"github.com/orneryd/go-json/internal/errors"
+	"github.com/orneryd/go-json/internal/runtime"
 )
 
 func (t OpType) IsMultipleOpField() bool {

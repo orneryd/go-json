@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/bytedance/sonic"
-	gojson "github.com/goccy/go-json"
+	gojson "github.com/orneryd/go-json"
 )
 
 // The decode benchmarks of the keys: structs of the same fields and values whose keys differ only, each decoded
@@ -80,7 +80,7 @@ type NonASCIIKeys struct {
 // keyLengthFixture returns the JSON of an array of objects of the struct type, by its tags.
 func keyLengthFixture(typ reflect.Type) []byte {
 	values := []string{`12345`, `"go-json"`, `"public"`, `"clean"`, `42`, `"gopher@example.com"`,
-		`"https://github.com/goccy/go-json"`, `2048`, `"Fast JSON encoder/decoder compatible with encoding/json"`,
+		`"https://github.com/orneryd/go-json"`, `2048`, `"Fast JSON encoder/decoder compatible with encoding/json"`,
 		`3100`, `"master"`, `17`}
 	var objects []string
 	for i := 0; i < 16; i++ {

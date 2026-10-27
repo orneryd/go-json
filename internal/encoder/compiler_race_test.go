@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/goccy/go-json/internal/runtime"
+	"github.com/orneryd/go-json/internal/runtime"
 )
 
 // The opcodes of a type are compiled by every goroutine which encodes the type for the first time at the same

@@ -10,7 +10,7 @@ import (
 	"unicode/utf8"
 	"unsafe"
 
-	"github.com/goccy/go-json/internal/errors"
+	"github.com/orneryd/go-json/internal/errors"
 )
 
 type stringDecoder struct {
@@ -61,7 +61,7 @@ func (d *stringDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsaf
 }
 
 func (d *stringDecoder) DecodePath(ctx *RuntimeContext, cursor, depth int64) ([][]byte, int64, error) {
-	bytes, c, err := d.decodeByte(ctx.Buf, cursor)
+	bytes, c, err := d.decodeByte(ctx.Buf, cursor, preserveInvalidUTF8(ctx.Option.Flags))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -109,9 +109,17 @@ type stringInfo struct {
 	nonASCII bool
 }
 
+// preserveInvalidUTF8 reports whether the invalid UTF-8 of a decoded string is kept as it is in the input, which
+// PreserveInvalidUTF8Option asks for, instead of being replaced by utf8.RuneError ( see decodeLiteral ). The flags
+// are passed to the normalizers from the option of the RuntimeContext of the call: nothing of the decoding is kept
+// by them, so that a decoder shared by the calls of the types, or by the goroutines, keeps no option.
+func preserveInvalidUTF8(flags OptionFlags) bool {
+	return flags&PreserveInvalidUTF8Option != 0
+}
+
 // decodeByte returns the bytes of the string at cursor, or nil for null: a part of buf, or a slice of their own if
-// the string has an escape or invalid UTF-8 ( see decodeLiteral ).
-func (d *stringDecoder) decodeByte(buf []byte, cursor int64) ([]byte, int64, error) {
+// the string has an escape or invalid UTF-8 ( see decodeLiteral ), which are kept as they are if preserve is set.
+func (d *stringDecoder) decodeByte(buf []byte, cursor int64, preserve bool) ([]byte, int64, error) {
 	literal, next, info, err := d.scanString(buf, cursor)
 	if next < 0 {
 		literal, next, info, err = d.scanStringRest(buf, literal, -next-1, info)
@@ -119,15 +127,15 @@ func (d *stringDecoder) decodeByte(buf []byte, cursor int64) ([]byte, int64, err
 	if err != nil || literal == nil {
 		return literal, next, err
 	}
-	return decodeLiteral(literal, info), next, nil
+	return decodeLiteral(literal, info, preserve), next, nil
 }
 
 // unescapeLong returns the string of the literal, which has an escape and is too long for the arena: it is decoded
 // into the scratch bytes of the context, and copied, so that the bytes of the string are not zeroed before they are
 // written, and the buffer is not written.
-func (ctx *RuntimeContext) unescapeLong(literal []byte, info stringInfo) string {
+func (ctx *RuntimeContext) unescapeLong(literal []byte, info stringInfo, preserve bool) string {
 	if len(literal) > maxUnescapeScratchSize {
-		decoded := decodeLiteral(literal, info)
+		decoded := decodeLiteral(literal, info, preserve)
 		return unsafe.String(unsafe.SliceData(decoded), len(decoded))
 	}
 	if cap(ctx.unescaped) < len(literal) {
@@ -135,7 +143,7 @@ func (ctx *RuntimeContext) unescapeLong(literal []byte, info stringInfo) string 
 	}
 	n := unescapeTo(unsafe.Pointer(unsafe.SliceData(ctx.unescaped)), literal, info.firstEscape)
 	decoded := ctx.unescaped[:n]
-	if info.nonASCII && !utf8.Valid(decoded) {
+	if info.nonASCII && !preserve && !utf8.Valid(decoded) {
 		return string(coerceUTF8(decoded))
 	}
 	return string(decoded)
@@ -143,21 +151,25 @@ func (ctx *RuntimeContext) unescapeLong(literal []byte, info stringInfo) string 
 
 // decodeLiteral decodes the escapes of the literal and replaces its invalid UTF-8, into a slice of its own if it
 // has any: the buffer is never written, so that it keeps the input, which is checked again for a syntax error
-// ( see Stream.decodeError ).
-func decodeLiteral(literal []byte, info stringInfo) []byte {
+// ( see Stream.decodeError ). The invalid UTF-8 is replaced unless preserve is set, which keeps it as it is: the
+// escapes are decoded the same way then, and a lone escaped surrogate is written as utf8.RuneError in either case.
+func decodeLiteral(literal []byte, info stringInfo, preserve bool) []byte {
 	if info.firstEscape >= 0 {
 		out := make([]byte, len(literal))
 		literal = out[:unescapeTo(unsafe.Pointer(unsafe.SliceData(out)), literal, info.firstEscape)]
 	}
-	if info.nonASCII && !utf8.Valid(literal) {
+	if info.nonASCII && !preserve && !utf8.Valid(literal) {
 		literal = coerceUTF8(literal)
 	}
 	return literal
 }
 
 // validLiteral returns the literal of a string without an escape, whose bytes are not all ASCII, with its invalid
-// UTF-8 replaced ( see decodeLiteral ).
-func validLiteral(literal []byte) []byte {
+// UTF-8 replaced, or kept as it is if preserve is set ( see decodeLiteral ).
+func validLiteral(literal []byte, preserve bool) []byte {
+	if preserve {
+		return literal
+	}
 	if !utf8.Valid(literal) {
 		return coerceUTF8(literal)
 	}
@@ -168,6 +180,7 @@ func validLiteral(literal []byte) []byte {
 // recorded, and skipped ( see skipOtherValue ). It is a function of its own, so that the decoding of the other
 // strings, as the keys, is the one it was, and that Decode keeps nothing across its call.
 func (d *stringDecoder) decodeStringValue(ctx *RuntimeContext, cursor int64) (string, int64, bool, error) {
+	preserve := preserveInvalidUTF8(ctx.Option.Flags)
 	literal, next, info, err := d.scanString(ctx.Buf, cursor)
 	if next < 0 {
 		return d.decodeStringRest(ctx, literal, -next-1, info)
@@ -183,17 +196,17 @@ func (d *stringDecoder) decodeStringValue(ctx *RuntimeContext, cursor int64) (st
 		dst := ctx.reserveArena(len(literal))
 		n := unescapeTo(unsafe.Pointer(unsafe.SliceData(dst)), literal, info.firstEscape)
 		decoded := dst[:n]
-		if info.nonASCII && !utf8.Valid(decoded) {
+		if info.nonASCII && !preserve && !utf8.Valid(decoded) {
 			return string(coerceUTF8(decoded)), next, true, nil
 		}
 		ctx.arena = ctx.arena[:len(ctx.arena)+n]
 		return unsafe.String(unsafe.SliceData(decoded), n), next, true, nil
 	}
 	if info.firstEscape >= 0 {
-		return ctx.unescapeLong(literal, info), next, true, nil
+		return ctx.unescapeLong(literal, info, preserve), next, true, nil
 	}
 	if info.nonASCII {
-		literal = validLiteral(literal)
+		literal = validLiteral(literal, preserve)
 	}
 	return ctx.makeString(literal), next, true, nil
 }
@@ -207,6 +220,7 @@ func (d *stringDecoder) decodeStringValue(ctx *RuntimeContext, cursor int64) (st
 // the CPU has a SIMD scan, the words are looked at in the first 64 bytes only, after which a long string is scanned
 // by SIMD. An error in the string is a syntax error of the string.
 func (d *stringDecoder) decodeStringField(ctx *RuntimeContext, start int64) (string, int64, bool, error) {
+	preserve := preserveInvalidUTF8(ctx.Option.Flags)
 	buf := ctx.Buf
 	b := (*sliceHeader)(unsafe.Pointer(&buf)).data
 	buflen := int64(len(buf))
@@ -239,7 +253,7 @@ func (d *stringDecoder) decodeStringField(ctx *RuntimeContext, start int64) (str
 			literal, next := buf[start:cursor], cursor+1
 			if firstEscape < 0 {
 				if nonASCII {
-					literal = validLiteral(literal)
+					literal = validLiteral(literal, preserve)
 				}
 				return ctx.makeString(literal), next, true, nil
 			}
@@ -248,13 +262,13 @@ func (d *stringDecoder) decodeStringField(ctx *RuntimeContext, start int64) (str
 				dst := ctx.reserveArena(len(literal))
 				n := unescapeTo(unsafe.Pointer(unsafe.SliceData(dst)), literal, int(firstEscape))
 				decoded := dst[:n]
-				if nonASCII && !utf8.Valid(decoded) {
+				if nonASCII && !preserve && !utf8.Valid(decoded) {
 					return string(coerceUTF8(decoded)), next, true, nil
 				}
 				ctx.arena = ctx.arena[:len(ctx.arena)+n]
 				return unsafe.String(unsafe.SliceData(decoded), n), next, true, nil
 			}
-			return ctx.unescapeLong(literal, stringInfo{firstEscape: int(firstEscape), nonASCII: nonASCII}), next, true, nil
+			return ctx.unescapeLong(literal, stringInfo{firstEscape: int(firstEscape), nonASCII: nonASCII}, preserve), next, true, nil
 		case c == '\\':
 			if firstEscape < 0 {
 				firstEscape = cursor - start
@@ -330,6 +344,7 @@ func (d *stringDecoder) skipOtherValue(ctx *RuntimeContext, err error) (string, 
 // decodeString returns the string at cursor as a value to store, and false for null.
 // An escaped string is decoded out of the buffer directly.
 func (d *stringDecoder) decodeString(ctx *RuntimeContext, cursor int64) (string, int64, bool, error) {
+	preserve := preserveInvalidUTF8(ctx.Option.Flags)
 	literal, next, info, err := d.scanString(ctx.Buf, cursor)
 	if next < 0 {
 		literal, next, info, err = d.scanStringRest(ctx.Buf, literal, -next-1, info)
@@ -342,17 +357,17 @@ func (d *stringDecoder) decodeString(ctx *RuntimeContext, cursor int64) (string,
 		dst := ctx.reserveArena(len(literal))
 		n := unescapeTo(unsafe.Pointer(unsafe.SliceData(dst)), literal, info.firstEscape)
 		decoded := dst[:n]
-		if info.nonASCII && !utf8.Valid(decoded) {
+		if info.nonASCII && !preserve && !utf8.Valid(decoded) {
 			return string(coerceUTF8(decoded)), next, true, nil
 		}
 		ctx.arena = ctx.arena[:len(ctx.arena)+n]
 		return unsafe.String(unsafe.SliceData(decoded), n), next, true, nil
 	}
 	if info.firstEscape >= 0 {
-		return ctx.unescapeLong(literal, info), next, true, nil
+		return ctx.unescapeLong(literal, info, preserve), next, true, nil
 	}
 	if info.nonASCII {
-		literal = validLiteral(literal)
+		literal = validLiteral(literal, preserve)
 	}
 	return ctx.makeString(literal), next, true, nil
 }

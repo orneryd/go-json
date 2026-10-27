@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	json "github.com/goccy/go-json"
+	json "github.com/orneryd/go-json"
 )
 
 // randomEscapedString returns the JSON literal of a random string of n runes, some of which are escaped in the

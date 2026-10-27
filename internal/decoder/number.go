@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"unsafe"
 
-	"github.com/goccy/go-json/internal/errors"
+	"github.com/orneryd/go-json/internal/errors"
 )
 
 type numberDecoder struct {
@@ -39,7 +39,7 @@ func (d *numberDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsaf
 	case isOtherValue(c, numberValue):
 		return ctx.numberKindError(cursor, depth, jsonNumberType)
 	}
-	bytes, c, err := d.decodeByte(buf, cursor)
+	bytes, c, err := d.decodeByte(buf, cursor, preserveInvalidUTF8(ctx.Option.Flags))
 	if err != nil {
 		return 0, err
 	}
@@ -94,7 +94,7 @@ func isValidNumber(b []byte) bool {
 }
 
 func (d *numberDecoder) DecodePath(ctx *RuntimeContext, cursor, depth int64) ([][]byte, int64, error) {
-	bytes, c, err := d.decodeByte(ctx.Buf, cursor)
+	bytes, c, err := d.decodeByte(ctx.Buf, cursor, preserveInvalidUTF8(ctx.Option.Flags))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -104,7 +104,7 @@ func (d *numberDecoder) DecodePath(ctx *RuntimeContext, cursor, depth int64) ([]
 	return [][]byte{bytes}, c, nil
 }
 
-func (d *numberDecoder) decodeByte(buf []byte, cursor int64) ([]byte, int64, error) {
+func (d *numberDecoder) decodeByte(buf []byte, cursor int64, preserve bool) ([]byte, int64, error) {
 	for {
 		switch buf[cursor] {
 		case ' ', '\n', '\t', '\r':
@@ -125,7 +125,7 @@ func (d *numberDecoder) decodeByte(buf []byte, cursor int64) ([]byte, int64, err
 			cursor += 4
 			return nil, cursor, nil
 		case '"':
-			return d.stringDecoder.decodeByte(buf, cursor)
+			return d.stringDecoder.decodeByte(buf, cursor, preserve)
 		case nul:
 			return nil, 0, errors.ErrUnexpectedEndOfJSON("json.Number", cursor)
 		default:

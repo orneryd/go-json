@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"unsafe"
 
-	"github.com/goccy/go-json/internal/runtime"
+	"github.com/orneryd/go-json/internal/runtime"
 )
 
 // ZeroKind is what makes the value of a field zero for omitzero, as encoding/json decides it: by the IsZero

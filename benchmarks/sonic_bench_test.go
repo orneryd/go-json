@@ -40,7 +40,7 @@ import (
 	"testing"
 
 	"github.com/bytedance/sonic"
-	gojson "github.com/goccy/go-json"
+	gojson "github.com/orneryd/go-json"
 )
 
 var (

@@ -76,7 +76,7 @@ func (d *wrappedStringDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, 
 		}
 		return ctx.stringOptionUnquoted(cursor, depth, d.typ)
 	}
-	bytes, c, err := d.stringDecoder.decodeByte(buf, cursor)
+	bytes, c, err := d.stringDecoder.decodeByte(buf, cursor, preserveInvalidUTF8(ctx.Option.Flags))
 	if err != nil {
 		return 0, err
 	}

@@ -5,9 +5,9 @@ import (
 	"io"
 	"unsafe"
 
-	"github.com/goccy/go-json/internal/decoder"
-	"github.com/goccy/go-json/internal/errors"
-	"github.com/goccy/go-json/internal/runtime"
+	"github.com/orneryd/go-json/internal/decoder"
+	"github.com/orneryd/go-json/internal/errors"
+	"github.com/orneryd/go-json/internal/runtime"
 )
 
 type Decoder struct {

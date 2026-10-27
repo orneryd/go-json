@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"unsafe"
 
-	"github.com/goccy/go-json/internal/decoder"
-	"github.com/goccy/go-json/internal/runtime"
+	"github.com/orneryd/go-json/internal/decoder"
+	"github.com/orneryd/go-json/internal/runtime"
 )
 
 // UnmarshalOf parses the JSON-encoded data and stores the result in the value pointed to by v, as Unmarshal does.

@@ -10,7 +10,7 @@ import (
 	"testing"
 	"unicode/utf8"
 
-	json "github.com/goccy/go-json"
+	json "github.com/orneryd/go-json"
 )
 
 // randomSkippedValue returns a random JSON value with white spaces, escapes and long strings anywhere, of up to

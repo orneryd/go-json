@@ -4,7 +4,7 @@ import (
 	stdjson "encoding/json"
 	"testing"
 
-	"github.com/goccy/go-json"
+	"github.com/orneryd/go-json"
 )
 
 // A value of a recursive type which is the last field of a value of the same type is encoded in the frame of

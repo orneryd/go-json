@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/goccy/go-json"
+	"github.com/orneryd/go-json"
 )
 
 type recursiveMap struct {

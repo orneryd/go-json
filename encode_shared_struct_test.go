@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/goccy/go-json"
+	"github.com/orneryd/go-json"
 )
 
 // A struct which is a value in many places of a type is encoded, where it is again, by a jump to one code

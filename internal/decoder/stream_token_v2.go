@@ -10,7 +10,7 @@ import (
 	"unicode/utf8"
 	"unsafe"
 
-	"github.com/goccy/go-json/internal/errors"
+	"github.com/orneryd/go-json/internal/errors"
 )
 
 // The tokens of a stream as encoding/json of Go 1.27 reads them, by encoding/json/jsontext: a token or a value is

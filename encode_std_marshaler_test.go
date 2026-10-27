@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/goccy/go-json"
+	"github.com/orneryd/go-json"
 )
 
 // The outputs of the marshalers of the types of the standard library are written by their appending methods: they

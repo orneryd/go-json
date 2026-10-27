@@ -9,7 +9,7 @@ import (
 	"time"
 	"unsafe"
 
-	json "github.com/goccy/go-json"
+	json "github.com/orneryd/go-json"
 )
 
 type unmarshalOfSmall struct {

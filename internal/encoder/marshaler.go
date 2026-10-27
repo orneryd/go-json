@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"unsafe"
 
-	"github.com/goccy/go-json/internal/runtime"
+	"github.com/orneryd/go-json/internal/runtime"
 )
 
 // A method of a marshaler is called directly, by the code of the method, instead of through the interface:

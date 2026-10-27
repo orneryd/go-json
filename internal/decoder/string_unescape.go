@@ -6,7 +6,7 @@ import (
 	"unicode/utf8"
 	"unsafe"
 
-	"github.com/goccy/go-json/internal/errors"
+	"github.com/orneryd/go-json/internal/errors"
 )
 
 // decodeStringRest is decodeStringValue for a long string, which scanString stopped in: it scans the rest of the
@@ -15,6 +15,7 @@ import (
 //
 //go:noinline
 func (d *stringDecoder) decodeStringRest(ctx *RuntimeContext, literal []byte, cursor int64, info stringInfo) (string, int64, bool, error) {
+	preserve := preserveInvalidUTF8(ctx.Option.Flags)
 	if info.firstEscape >= 0 {
 		return d.unescapeRest(ctx, literal, cursor, info)
 	}
@@ -50,7 +51,7 @@ func (d *stringDecoder) decodeStringRest(ctx *RuntimeContext, literal []byte, cu
 		case '"':
 			literal := buf[start:cursor]
 			if high&msb != 0 {
-				literal = validLiteral(literal)
+				literal = validLiteral(literal, preserve)
 			}
 			return ctx.makeString(literal), cursor + 1, true, nil
 		case nul:
@@ -72,6 +73,7 @@ func (d *stringDecoder) decodeStringRest(ctx *RuntimeContext, literal []byte, cu
 //
 //go:noinline
 func (d *stringDecoder) unescapeRest(ctx *RuntimeContext, literal []byte, cursor int64, info stringInfo) (string, int64, bool, error) {
+	preserve := preserveInvalidUTF8(ctx.Option.Flags)
 	buf := ctx.Buf
 	start := cursor - int64(len(literal))
 	var high uint64
@@ -141,7 +143,7 @@ func (d *stringDecoder) unescapeRest(ctx *RuntimeContext, literal []byte, cursor
 			if !escaped {
 				literal := buf[start:cursor]
 				if high&msb != 0 {
-					literal = validLiteral(literal)
+					literal = validLiteral(literal, preserve)
 				}
 				return ctx.makeString(literal), next, true, nil
 			}
@@ -149,7 +151,7 @@ func (d *stringDecoder) unescapeRest(ctx *RuntimeContext, literal []byte, cursor
 			if cap(out) <= maxUnescapeScratchSize {
 				ctx.unescaped = out[:0]
 			}
-			if high&msb != 0 && !utf8.Valid(out) {
+			if high&msb != 0 && !preserve && !utf8.Valid(out) {
 				return string(coerceUTF8(out)), next, true, nil
 			}
 			return ctx.copyString(out), next, true, nil

@@ -6,8 +6,8 @@ import (
 	"math"
 	"unsafe"
 
-	"github.com/goccy/go-json/internal/encoder"
-	"github.com/goccy/go-json/internal/runtime"
+	"github.com/orneryd/go-json/internal/encoder"
+	"github.com/orneryd/go-json/internal/runtime"
 )
 
 // The functions which the template calls as appendInt, appendString and so on are the ones of the encoder

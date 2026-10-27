@@ -14,6 +14,10 @@ const (
 	DisallowUnknownFieldsOption
 	// NoCopyStringOption makes the decoded strings refer to the input instead of a copy of their bytes.
 	NoCopyStringOption
+	// PreserveInvalidUTF8Option keeps the invalid UTF-8 of a decoded string as it is in the input, instead of
+	// replacing it with utf8.RuneError as encoding/json does ( see decodeLiteral ). The escapes are decoded, and a
+	// lone escaped surrogate is still written as utf8.RuneError: only the bytes of the input are kept.
+	PreserveInvalidUTF8Option
 )
 
 type Option struct {

@@ -20,7 +20,7 @@ func TestVMDispatchIsJumpTable(t *testing.T) {
 	}
 	for _, vm := range []string{"vm", "vm_indent", "vm_color", "vm_color_indent"} {
 		t.Run(vm, func(t *testing.T) {
-			cmd := exec.Command("go", "build", "-gcflags=-S", "github.com/goccy/go-json/internal/encoder/"+vm)
+			cmd := exec.Command("go", "build", "-gcflags=-S", "github.com/orneryd/go-json/internal/encoder/"+vm)
 			out, err := cmd.CombinedOutput()
 			if err != nil {
 				t.Fatalf("go build: %v\n%s", err, out)

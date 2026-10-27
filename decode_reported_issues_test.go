@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	json "github.com/goccy/go-json"
+	json "github.com/orneryd/go-json"
 )
 
 // The cases of the reported issues of the decoder: go-json decodes them as encoding/json of the running Go does.

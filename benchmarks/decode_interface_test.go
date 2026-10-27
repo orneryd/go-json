@@ -3,7 +3,7 @@ package benchmark
 import (
 	"testing"
 
-	gojson "github.com/goccy/go-json"
+	gojson "github.com/orneryd/go-json"
 )
 
 // The values of interface types which are set before the decoding: a value of interface{} which holds a pointer

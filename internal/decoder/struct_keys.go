@@ -414,7 +414,9 @@ func equalFoldedASCII(key, folded []byte) bool {
 }
 
 // lookup returns the field of the key, or nil, and the key, which is decoded in place if it is escaped.
-func (k *structKeys) lookup(key []byte, info stringInfo) (*structFieldSet, []byte) {
+// preserve is whether the invalid UTF-8 of the decoded key is kept as the input has it ( see decodeLiteral ):
+// the lookup itself goes by the runes the key folds to, which is the same for the bytes of the input either way.
+func (k *structKeys) lookup(key []byte, info stringInfo, preserve bool) (*structFieldSet, []byte) {
 	if info.firstEscape < 0 && !info.nonASCII {
 		if !k.hasLength(len(key)) {
 			return nil, key
@@ -422,7 +424,7 @@ func (k *structKeys) lookup(key []byte, info stringInfo) (*structFieldSet, []byt
 		w0, w1 := keyWords(key)
 		return k.findASCII(key, w0, w1), key
 	}
-	key = decodeLiteral(key, info)
+	key = decodeLiteral(key, info, preserve)
 	var arr [64]byte
 	if e := k.find(appendFoldedKey(arr[:0], key)); e != nil {
 		return e.field(key), key

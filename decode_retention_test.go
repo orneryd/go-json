@@ -8,7 +8,7 @@ import (
 	"testing"
 	"weak"
 
-	json "github.com/goccy/go-json"
+	json "github.com/orneryd/go-json"
 )
 
 // The decoders keep buffers and contexts in pools between the calls. Nothing in them may refer to

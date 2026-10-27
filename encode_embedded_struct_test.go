@@ -5,7 +5,7 @@ import (
 	stdjson "encoding/json"
 	"testing"
 
-	"github.com/goccy/go-json"
+	"github.com/orneryd/go-json"
 )
 
 // The fields of an embedded struct are written as the fields of the struct which embeds it.

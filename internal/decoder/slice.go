@@ -6,7 +6,7 @@ import (
 	"sync/atomic"
 	"unsafe"
 
-	"github.com/goccy/go-json/internal/errors"
+	"github.com/orneryd/go-json/internal/errors"
 )
 
 type sliceDecoder struct {

@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/goccy/go-json"
+	"github.com/orneryd/go-json"
 )
 
 // The entries of a map with keys of a string kind are read by ranging over the map as a map of the same

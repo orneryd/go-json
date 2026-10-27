@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/goccy/go-json/internal/runtime"
+	"github.com/orneryd/go-json/internal/runtime"
 )
 
 // The recent decoders of a context return the decoder of the type asked, whatever types share its set

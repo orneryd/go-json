@@ -11,7 +11,7 @@ import (
 
 	"github.com/bytedance/sonic"
 	"github.com/bytedance/sonic/option"
-	gojson "github.com/goccy/go-json"
+	gojson "github.com/orneryd/go-json"
 )
 
 // sonic is measured in the way which is the best for it, so that the comparison is fair:

@@ -11,7 +11,7 @@ func testRun(arch string) *Run {
 		GeneratedAt: time.Date(2026, 9, 27, 0, 0, 0, 0, time.UTC),
 		GoVersion:   "go1.27.1", GOOS: "linux", GOARCH: arch, CPU: "test CPU",
 		Commit: "0123456789abcdef", Repository: "goccy/go-json", BenchTime: "100ms", Rounds: 3,
-		Libraries:  []Library{{Name: "encoding/json", Module: "std", Version: "go1.27.1"}, {Name: "goccy/go-json", Module: "github.com/goccy/go-json", Version: "0123456789abcdef"}},
+		Libraries:  []Library{{Name: "encoding/json", Module: "std", Version: "go1.27.1"}, {Name: "goccy/go-json", Module: "github.com/orneryd/go-json", Version: "0123456789abcdef"}},
 		Categories: []Category{{ID: "std", Title: "Same behavior as encoding/json", Baseline: "encoding/json"}},
 		Conditions: []Condition{{ID: "live-heap", Title: "With a live heap"}},
 		Payloads:   []Payload{{ID: "small", Title: "Small struct", Bytes: 100}, {ID: "large", Title: "Large struct", Bytes: 1000}},

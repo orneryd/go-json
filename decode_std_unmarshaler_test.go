@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/goccy/go-json"
+	"github.com/orneryd/go-json"
 )
 
 // json.RawMessage is given the bytes of the buffer of the decoder without a copy, since its UnmarshalJSON copies

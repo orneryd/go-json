@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/goccy/go-json"
+	"github.com/orneryd/go-json"
 )
 
 var validTests = []struct {

@@ -4,7 +4,7 @@ import (
 	stdjson "encoding/json"
 	"testing"
 
-	"github.com/goccy/go-json"
+	"github.com/orneryd/go-json"
 )
 
 // A struct embedded in an embedded struct. If a field with omitempty is empty, the encoder jumps to the next

@@ -3,8 +3,8 @@ package json
 import (
 	"io"
 
-	"github.com/goccy/go-json/internal/decoder"
-	"github.com/goccy/go-json/internal/encoder"
+	"github.com/orneryd/go-json/internal/decoder"
+	"github.com/orneryd/go-json/internal/encoder"
 )
 
 type EncodeOption = encoder.Option
@@ -102,5 +102,18 @@ func DecodeFieldPriorityFirstWin() DecodeOptionFunc {
 func DecodeNoCopyString() DecodeOptionFunc {
 	return func(opt *DecodeOption) {
 		opt.Flags |= decoder.NoCopyStringOption
+	}
+}
+
+// DecodePreserveInvalidUTF8 keeps the invalid UTF-8 of a decoded string as the bytes the input has, instead of
+// replacing it with utf8.RuneError as encoding/json does: the bytes of a string, of a map key or of a field key,
+// and the strings decoded by a Stream or a Path, keep them as they are, so that a string may be the one the input
+// holds, byte for byte, including the encodings of a surrogate which WTF-8 makes.
+//
+// The escapes are decoded as they are without the option, and a lone escaped surrogate is still written as
+// utf8.RuneError: only the bytes of the input are kept.
+func DecodePreserveInvalidUTF8() DecodeOptionFunc {
+	return func(opt *DecodeOption) {
+		opt.Flags |= decoder.PreserveInvalidUTF8Option
 	}
 }

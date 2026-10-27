@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/bytedance/sonic"
-	gojson "github.com/goccy/go-json"
+	gojson "github.com/orneryd/go-json"
 )
 
 // The benchmarks of the requests and the responses of the APIs of large language models, which coding agents

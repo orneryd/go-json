@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	json "github.com/goccy/go-json"
+	json "github.com/orneryd/go-json"
 )
 
 // The keys of an object are matched with the fields of a struct as encoding/json does: an exact match first,

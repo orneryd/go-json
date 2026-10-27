@@ -19,7 +19,7 @@ import (
 	"benchmark/report"
 
 	"github.com/bytedance/sonic"
-	gojson "github.com/goccy/go-json"
+	gojson "github.com/orneryd/go-json"
 	jsoniter "github.com/json-iterator/go"
 	segmentio "github.com/segmentio/encoding/json"
 )
@@ -143,7 +143,7 @@ func segmentioUnmarshal(flags segmentio.ParseFlags) func([]byte) func(any) error
 }
 
 const (
-	goJSONModule    = "github.com/goccy/go-json"
+	goJSONModule    = "github.com/orneryd/go-json"
 	sonicModule     = "github.com/bytedance/sonic"
 	jsoniterModule  = "github.com/json-iterator/go"
 	segmentioModule = "github.com/segmentio/encoding"
@@ -762,7 +762,7 @@ func reportLibraries() []report.Library {
 	}
 	if sha := os.Getenv("GITHUB_SHA"); sha != "" {
 		// go-json is the one of the repository, replaced by its directory
-		versions["github.com/goccy/go-json"] = sha
+		versions["github.com/orneryd/go-json"] = sha
 	}
 	seen := map[string]bool{}
 	var libs []report.Library

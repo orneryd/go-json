@@ -10,7 +10,7 @@ import (
 	"benchmark/report"
 
 	"github.com/bytedance/sonic"
-	gojson "github.com/goccy/go-json"
+	gojson "github.com/orneryd/go-json"
 	jsoniter "github.com/json-iterator/go"
 	segmentio "github.com/segmentio/encoding/json"
 )

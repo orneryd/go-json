@@ -3,7 +3,7 @@ package json
 import (
 	"reflect"
 
-	"github.com/goccy/go-json/internal/decoder"
+	"github.com/orneryd/go-json/internal/decoder"
 )
 
 // CreatePath creates JSON Path.
@@ -67,7 +67,7 @@ func (p *Path) Unmarshal(data []byte, v any, optFuncs ...DecodeOptionFunc) error
 	results := make([]any, 0, len(contents))
 	for _, content := range contents {
 		var result any
-		if err := Unmarshal(content, &result); err != nil {
+		if err := UnmarshalWithOption(content, &result, optFuncs...); err != nil {
 			return err
 		}
 		results = append(results, result)

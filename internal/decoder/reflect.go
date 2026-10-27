@@ -5,7 +5,7 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/goccy/go-json/internal/runtime"
+	"github.com/orneryd/go-json/internal/runtime"
 )
 
 // The decoders allocate and assign values through the reflect package, never through the internal

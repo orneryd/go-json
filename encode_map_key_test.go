@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/goccy/go-json"
+	"github.com/orneryd/go-json"
 )
 
 // A map whose key is a plain string is encoded by fewer opcodes than a map with a key of another kind, which

@@ -4,7 +4,7 @@ import (
 	stdjson "encoding/json"
 	"testing"
 
-	"github.com/goccy/go-json"
+	"github.com/orneryd/go-json"
 )
 
 // Fields of the same kind in a row are encoded by the opcode of the run, which falls through the opcodes of

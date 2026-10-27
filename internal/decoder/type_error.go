@@ -172,7 +172,8 @@ func (ctx *RuntimeContext) TypeError(dec Decoder, typ reflect.Type, base, offset
 	if p.plain != nil {
 		return p.plain
 	}
-	e := newTypeError(p, typeErrorPath(dec, ctx.Buf, base, p), typ)
+	// the input names of the type error are decoded as the option of the call decodes the keys
+	e := newTypeError(p, typeErrorPath(dec, ctx.Buf, base, p, preserveInvalidUTF8(ctx.Option.Flags)), typ)
 	if p.atStart {
 		e.Offset = p.start
 	}
@@ -199,8 +200,9 @@ type typeErrorStep struct {
 }
 
 // typeErrorPath returns the path from the value which dec decodes at cursor to the value of the error, by the
-// decoders of the values it goes through.
-func typeErrorPath(dec Decoder, buf []byte, cursor int64, p *pendingTypeError) []typeErrorStep {
+// decoders of the values it goes through. preserve is whether the invalid UTF-8 of an input name is kept as the
+// input has it ( see decodeLiteral ).
+func typeErrorPath(dec Decoder, buf []byte, cursor int64, p *pendingTypeError, preserve bool) []typeErrorStep {
 	var path []typeErrorStep
 	for {
 		cursor = skipWhiteSpace(buf, cursor)
@@ -218,7 +220,7 @@ func typeErrorPath(dec Decoder, buf []byte, cursor int64, p *pendingTypeError) [
 			dec = d.dec
 			continue
 		case *structDecoder:
-			step, child, next, ok := d.typeErrorChild(buf, cursor, p)
+			step, child, next, ok := d.typeErrorChild(buf, cursor, p, preserve)
 			if !ok {
 				return path
 			}
@@ -248,7 +250,7 @@ func typeErrorPath(dec Decoder, buf []byte, cursor int64, p *pendingTypeError) [
 			switch buf[cursor] {
 			case '{':
 				var key string
-				if key, next, ok = typeErrorEntry(buf, cursor, p); ok {
+				if key, next, ok = typeErrorEntry(buf, cursor, p, preserve); ok {
 					path = append(path, typeErrorStep{name: key})
 				}
 			case '[':
@@ -262,7 +264,7 @@ func typeErrorPath(dec Decoder, buf []byte, cursor int64, p *pendingTypeError) [
 			}
 			cursor = next
 		case *mapDecoder:
-			key, next, ok := typeErrorEntry(buf, cursor, p)
+			key, next, ok := typeErrorEntry(buf, cursor, p, preserve)
 			if !ok {
 				return path
 			}
@@ -280,7 +282,7 @@ func typeErrorPath(dec Decoder, buf []byte, cursor int64, p *pendingTypeError) [
 // typeErrorChild returns the step to the field of the object at cursor whose value has the error, the decoder of
 // the field and the position of its value, which is -1 if the error is of the key. ok is false if the error is in
 // no field of the object.
-func (d *structDecoder) typeErrorChild(buf []byte, cursor int64, p *pendingTypeError) (typeErrorStep, Decoder, int64, bool) {
+func (d *structDecoder) typeErrorChild(buf []byte, cursor int64, p *pendingTypeError, preserve bool) (typeErrorStep, Decoder, int64, bool) {
 	if buf[cursor] != '{' {
 		return typeErrorStep{}, nil, 0, false
 	}
@@ -294,7 +296,7 @@ func (d *structDecoder) typeErrorChild(buf []byte, cursor int64, p *pendingTypeE
 		if !ok {
 			return typeErrorStep{}, nil, 0, false
 		}
-		field, _ := d.keys.lookup(key, info)
+		field, _ := d.keys.lookup(key, info, preserve)
 		cursor = skipWhiteSpace(buf, next)
 		if buf[cursor] != ':' {
 			return typeErrorStep{}, nil, 0, false
@@ -309,7 +311,7 @@ func (d *structDecoder) typeErrorChild(buf []byte, cursor int64, p *pendingTypeE
 				return typeErrorStep{}, nil, 0, false
 			}
 			step := typeErrorStep{
-				structName: d.typeName, name: field.key, inputName: string(decodeLiteral(key, info)), isField: true,
+				structName: d.typeName, name: field.key, inputName: string(decodeLiteral(key, info, preserve)), isField: true,
 			}
 			if embeddedFieldNames {
 				step.embedded = d.embedded[field]
@@ -349,7 +351,7 @@ func typeErrorElement(buf []byte, cursor int64, p *pendingTypeError) (int, int64
 
 // typeErrorEntry returns the key of the entry of the object at cursor which has the error, and the position of
 // its value, which is -1 if the error is of the key.
-func typeErrorEntry(buf []byte, cursor int64, p *pendingTypeError) (string, int64, bool) {
+func typeErrorEntry(buf []byte, cursor int64, p *pendingTypeError, preserve bool) (string, int64, bool) {
 	if buf[cursor] != '{' {
 		return "", 0, false
 	}
@@ -361,7 +363,7 @@ func typeErrorEntry(buf []byte, cursor int64, p *pendingTypeError) (string, int6
 		if !ok {
 			return "", 0, false
 		}
-		key = decodeLiteral(key, info)
+		key = decodeLiteral(key, info, preserve)
 		if p.atKey && keyStart == p.start {
 			return string(key), -1, true
 		}

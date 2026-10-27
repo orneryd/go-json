@@ -11,8 +11,8 @@ import (
 	"strconv"
 	"unsafe"
 
-	"github.com/goccy/go-json/internal/errors"
-	"github.com/goccy/go-json/internal/runtime"
+	"github.com/orneryd/go-json/internal/errors"
+	"github.com/orneryd/go-json/internal/runtime"
 )
 
 // The keys of a map of an interface type, which encoding/json encodes when it is built on encoding/json/v2

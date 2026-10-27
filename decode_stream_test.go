@@ -8,7 +8,7 @@ import (
 	"testing"
 	"testing/iotest"
 
-	json "github.com/goccy/go-json"
+	json "github.com/orneryd/go-json"
 )
 
 // The stream decoder reads a whole value into its buffer before decoding it, so a value

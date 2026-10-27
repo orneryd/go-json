@@ -18,7 +18,7 @@ import (
 	"net/netip"
 	"time"
 
-	"github.com/goccy/go-json"
+	"github.com/orneryd/go-json"
 )
 
 type stamp struct{ time.Time }
@@ -60,7 +60,7 @@ func TestNoReflectMethodLookupByVariableName(t *testing.T) {
 		t.Fatal(err)
 	}
 	dir := t.TempDir()
-	goMod := "module deadcode\n\ngo 1.21\n\nrequire github.com/goccy/go-json v0.0.0\n\nreplace github.com/goccy/go-json => " +
+	goMod := "module deadcode\n\ngo 1.21\n\nrequire github.com/orneryd/go-json v0.0.0\n\nreplace github.com/orneryd/go-json => " +
 		filepath.ToSlash(root) + "\n"
 	if err := os.WriteFile(filepath.Join(dir, "go.mod"), []byte(goMod), 0o600); err != nil {
 		t.Fatal(err)
@@ -83,7 +83,7 @@ func TestNoReflectMethodLookupByVariableName(t *testing.T) {
 	for _, line := range strings.Split(string(out), "\n") {
 		// the dump is "caller -> callee", each followed by <ReflectMethod> if it is marked.
 		for _, fn := range strings.Split(line, " -> ") {
-			if name, ok := strings.CutSuffix(strings.TrimSpace(fn), " <ReflectMethod>"); ok && strings.HasPrefix(name, "github.com/goccy/go-json") {
+			if name, ok := strings.CutSuffix(strings.TrimSpace(fn), " <ReflectMethod>"); ok && strings.HasPrefix(name, "github.com/orneryd/go-json") {
 				marked[name] = true
 			}
 		}

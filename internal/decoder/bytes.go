@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"unsafe"
 
-	"github.com/goccy/go-json/internal/errors"
+	"github.com/orneryd/go-json/internal/errors"
 )
 
 type bytesDecoder struct {
@@ -88,5 +88,5 @@ func (d *bytesDecoder) decodeBinary(ctx *RuntimeContext, cursor, depth int64, p 
 		}
 		return nil, c, nil
 	}
-	return d.stringDecoder.decodeByte(buf, cursor)
+	return d.stringDecoder.decodeByte(buf, cursor, preserveInvalidUTF8(ctx.Option.Flags))
 }

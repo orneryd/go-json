@@ -4,7 +4,7 @@ package vm_color
 import (
 	"unsafe"
 
-	"github.com/goccy/go-json/internal/encoder"
+	"github.com/orneryd/go-json/internal/encoder"
 )
 
 func Run(ctx *encoder.RuntimeContext, b []byte, codeSet *encoder.OpcodeSet) ([]byte, error) {

@@ -3,7 +3,7 @@
 package decoder
 
 import (
-	"github.com/goccy/go-json/internal/errors"
+	"github.com/orneryd/go-json/internal/errors"
 )
 
 // text returns the words of the message of a syntax error which tell where the byte is, as encoding/json before

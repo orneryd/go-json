@@ -6,8 +6,8 @@ import (
 	"math/bits"
 	"unsafe"
 
-	"github.com/goccy/go-json/internal/errors"
-	"github.com/goccy/go-json/internal/runtime"
+	"github.com/orneryd/go-json/internal/errors"
+	"github.com/orneryd/go-json/internal/runtime"
 )
 
 const (
@@ -567,7 +567,7 @@ func (s *Stream) tokenString() (any, error) {
 	}
 	saved := s.buf[end]
 	s.buf[end] = nul
-	literal, _, err := tokenStringDecoder.decodeByte(s.buf[:end+1], s.cursor)
+	literal, _, err := tokenStringDecoder.decodeByte(s.buf[:end+1], s.cursor, preserveInvalidUTF8(s.Option.Flags))
 	s.buf[end] = saved
 	if err != nil {
 		if serr := s.valueSyntaxError(); serr != nil {

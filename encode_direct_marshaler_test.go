@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/goccy/go-json"
+	"github.com/orneryd/go-json"
 )
 
 // The types of this file are stored directly in an interface value: their data word is the value itself, not its

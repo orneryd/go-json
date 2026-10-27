@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/goccy/go-json"
+	"github.com/orneryd/go-json"
 )
 
 // issueRecover turns a panic inside the encoder into a test failure

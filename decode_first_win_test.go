@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	json "github.com/goccy/go-json"
+	json "github.com/orneryd/go-json"
 )
 
 // firstWinReference rewrites the JSON document so that every object keeps only the first of its keys which are

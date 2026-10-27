@@ -7,8 +7,8 @@ import (
 	"reflect"
 	"unsafe"
 
-	"github.com/goccy/go-json/internal/errors"
-	"github.com/goccy/go-json/internal/runtime"
+	"github.com/orneryd/go-json/internal/errors"
+	"github.com/orneryd/go-json/internal/runtime"
 )
 
 // interfaceMapKeys is whether every map of an interface type as its key is encoded: encoding/json which is not

@@ -5,7 +5,7 @@ import (
 	"math/bits"
 	"unsafe"
 
-	"github.com/goccy/go-json/internal/errors"
+	"github.com/orneryd/go-json/internal/errors"
 )
 
 const (

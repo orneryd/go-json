@@ -10,7 +10,7 @@ import (
 	"strings"
 	"unsafe"
 
-	"github.com/goccy/go-json/internal/errors"
+	"github.com/orneryd/go-json/internal/errors"
 )
 
 // newTypeError returns the type error as encoding/json of Go 1.27, which is made of encoding/json/v2, reports it.

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/goccy/go-json"
+	"github.com/orneryd/go-json"
 )
 
 // The entries of a sorted map whose values are scalars or of interface{} are written directly by one call of the

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	json "github.com/goccy/go-json"
+	json "github.com/orneryd/go-json"
 )
 
 // The type errors of the decoding are the ones of encoding/json of the running Go: a value which is not of the

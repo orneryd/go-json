@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	json "github.com/goccy/go-json"
+	json "github.com/orneryd/go-json"
 )
 
 type pointeeLevel int8

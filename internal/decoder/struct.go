@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"unsafe"
 
-	"github.com/goccy/go-json/internal/errors"
+	"github.com/orneryd/go-json/internal/errors"
 )
 
 type structFieldSet struct {
@@ -93,8 +93,9 @@ func (d *structDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsaf
 		return d.decodeObjectFirstWin(ctx, cursor, depth, p)
 	}
 	disallowUnknownFields := (ctx.Option.Flags & DisallowUnknownFieldsOption) != 0
+	preserve := preserveInvalidUTF8(ctx.Option.Flags)
 	for {
-		field, c, err := d.decodeKey(buf, cursor, disallowUnknownFields)
+		field, c, err := d.decodeKey(buf, cursor, disallowUnknownFields, preserve)
 		if err != nil {
 			return 0, err
 		}
@@ -160,8 +161,9 @@ func (d *structDecoder) decodeObjectFirstWin(ctx *RuntimeContext, cursor, depth 
 		seenFieldNum int
 	)
 	disallowUnknownFields := (ctx.Option.Flags & DisallowUnknownFieldsOption) != 0
+	preserve := preserveInvalidUTF8(ctx.Option.Flags)
 	for {
-		field, c, err := d.decodeKey(buf, cursor, disallowUnknownFields)
+		field, c, err := d.decodeKey(buf, cursor, disallowUnknownFields, preserve)
 		if err != nil {
 			return 0, err
 		}
@@ -268,8 +270,8 @@ func (d *structDecoder) DecodePath(ctx *RuntimeContext, cursor, depth int64) ([]
 // decodeKey reads the key of an object at cursor, and returns its field or nil, and the position after it.
 // A key which matches no field is an error if disallowUnknownFields is set. It is a function of its own, so that
 // the loop of Decode keeps its values in the registers, and the key is not returned, which would take registers
-// of the loop too.
-func (d *structDecoder) decodeKey(buf []byte, cursor int64, disallowUnknownFields bool) (*structFieldSet, int64, error) {
+// of the loop too. preserve is whether the invalid UTF-8 of the key which the error reports is kept.
+func (d *structDecoder) decodeKey(buf []byte, cursor int64, disallowUnknownFields bool, preserve bool) (*structFieldSet, int64, error) {
 	if buf[cursor] != '"' {
 		cursor = skipWhiteSpace(buf, cursor)
 		if buf[cursor] != '"' {
@@ -289,7 +291,7 @@ func (d *structDecoder) decodeKey(buf []byte, cursor int64, disallowUnknownField
 			// so is computed while they are folded, and the mask of the bytes from the bits of the special byte.
 			n := bits.TrailingZeros64(special) / 8
 			if buf[start+int64(n)] != '"' {
-				return d.decodeKeyNotASCII(buf, cursor, disallowUnknownFields)
+				return d.decodeKeyNotASCII(buf, cursor, disallowUnknownFields, preserve)
 			}
 			m := (special ^ (special - 1)) >> 8
 			w0 &= m
@@ -313,13 +315,13 @@ func (d *structDecoder) decodeKey(buf []byte, cursor int64, disallowUnknownField
 		for special == 0 {
 			end += 8
 			if end+8 > int64(cap(buf)) {
-				return d.decodeKeyByScan(buf, cursor, disallowUnknownFields)
+				return d.decodeKeyByScan(buf, cursor, disallowUnknownFields, preserve)
 			}
 			special = specialKeyBytes(load64(buf, end))
 		}
 		end += int64(bits.TrailingZeros64(special) / 8)
 		if buf[end] != '"' {
-			return d.decodeKeyNotASCII(buf, cursor, disallowUnknownFields)
+			return d.decodeKeyNotASCII(buf, cursor, disallowUnknownFields, preserve)
 		}
 		key := buf[start:end]
 		n := len(key)
@@ -341,7 +343,7 @@ func (d *structDecoder) decodeKey(buf []byte, cursor int64, disallowUnknownField
 		}
 		return field, end + 1, nil
 	}
-	return d.decodeKeyByScan(buf, cursor, disallowUnknownFields)
+	return d.decodeKeyByScan(buf, cursor, disallowUnknownFields, preserve)
 }
 
 // decodeKeyNotASCII is decodeKey for a key which has a byte which is not ASCII, or an escape. A key without an
@@ -349,12 +351,12 @@ func (d *structDecoder) decodeKey(buf []byte, cursor int64, disallowUnknownField
 // first: a key is usually the same as the key of its field, which it is found by whatever the fold of its runes,
 // because a key which is the same wins over the others. Any other key is folded rune by rune if its runes may
 // fold to the ones of a key, and else is of no field. A key with an escape is scanned as a string.
-func (d *structDecoder) decodeKeyNotASCII(buf []byte, cursor int64, disallowUnknownFields bool) (*structFieldSet, int64, error) {
+func (d *structDecoder) decodeKeyNotASCII(buf []byte, cursor int64, disallowUnknownFields bool, preserve bool) (*structFieldSet, int64, error) {
 	start := cursor + 1
 	end := start
 	for {
 		if end+8 > int64(cap(buf)) {
-			return d.decodeKeyByScan(buf, cursor, disallowUnknownFields)
+			return d.decodeKeyByScan(buf, cursor, disallowUnknownFields, preserve)
 		}
 		if special := keyEndBytes(load64(buf, end)); special != 0 {
 			end += int64(bits.TrailingZeros64(special) / 8)
@@ -363,7 +365,7 @@ func (d *structDecoder) decodeKeyNotASCII(buf []byte, cursor int64, disallowUnkn
 		end += 8
 	}
 	if buf[end] != '"' {
-		return d.decodeKeyByScan(buf, cursor, disallowUnknownFields)
+		return d.decodeKeyByScan(buf, cursor, disallowUnknownFields, preserve)
 	}
 	key := buf[start:end]
 	n := len(key)
@@ -392,9 +394,9 @@ func (d *structDecoder) decodeKeyNotASCII(buf []byte, cursor int64, disallowUnkn
 		// Most keys which are not the key of a field are told so by their first rune which is not ASCII, which
 		// folds to no rune of a key ( see mayFold ); the others are looked at rune by rune.
 		if keys.leadMayFold(w0) && keys.firstRuneMayFold(key, w0) && keys.mayFold(key) {
-			field, key = keys.lookup(key, stringInfo{firstEscape: -1, nonASCII: true})
+			field, key = keys.lookup(key, stringInfo{firstEscape: -1, nonASCII: true}, preserve)
 		} else if disallowUnknownFields {
-			key = decodeLiteral(key, stringInfo{firstEscape: -1, nonASCII: true})
+			key = decodeLiteral(key, stringInfo{firstEscape: -1, nonASCII: true}, preserve)
 		}
 	}
 	if field == nil && disallowUnknownFields {
@@ -404,7 +406,7 @@ func (d *structDecoder) decodeKeyNotASCII(buf []byte, cursor int64, disallowUnkn
 }
 
 // decodeKeyByScan is decodeKey for any key, which it scans as a string.
-func (d *structDecoder) decodeKeyByScan(buf []byte, cursor int64, disallowUnknownFields bool) (*structFieldSet, int64, error) {
+func (d *structDecoder) decodeKeyByScan(buf []byte, cursor int64, disallowUnknownFields bool, preserve bool) (*structFieldSet, int64, error) {
 	rawKey, next, info, err := d.stringDecoder.scanString(buf, cursor)
 	if next < 0 {
 		rawKey, next, info, err = d.stringDecoder.scanStringRest(buf, rawKey, -next-1, info)
@@ -412,7 +414,7 @@ func (d *structDecoder) decodeKeyByScan(buf []byte, cursor int64, disallowUnknow
 	if err != nil {
 		return nil, 0, err
 	}
-	field, key := d.keys.lookup(rawKey, info)
+	field, key := d.keys.lookup(rawKey, info, preserve)
 	if field == nil && disallowUnknownFields {
 		return nil, 0, unknownFieldError(key)
 	}

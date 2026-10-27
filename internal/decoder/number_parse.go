@@ -3,7 +3,7 @@ package decoder
 import (
 	"fmt"
 
-	"github.com/goccy/go-json/internal/errors"
+	"github.com/orneryd/go-json/internal/errors"
 )
 
 // The numbers of the input are parsed in one pass: the digits are accumulated as they are read.

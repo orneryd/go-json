@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/goccy/go-json"
+	"github.com/orneryd/go-json"
 )
 
 // A value whose type consists of a single pointer ( a struct of one pointer field, an array of one pointer,

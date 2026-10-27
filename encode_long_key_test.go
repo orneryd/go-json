@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/goccy/go-json"
+	"github.com/orneryd/go-json"
 )
 
 // A key up to a chunk ( encoder.KeyChunkSize ) is written by the opcode of the field, a longer one by the

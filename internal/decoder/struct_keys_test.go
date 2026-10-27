@@ -83,7 +83,7 @@ func TestStructKeysShortWithNul(t *testing.T) {
 	} {
 		buf := make([]byte, len(tc.in)+1, len(tc.in)+64)
 		copy(buf, tc.in)
-		field, _, err := d.decodeKey(buf, 0, false)
+		field, _, err := d.decodeKey(buf, 0, false, false)
 		if err != nil || field != tc.want {
 			t.Fatalf("%s: got %v %v, want %v", tc.in, field, err, tc.want)
 		}

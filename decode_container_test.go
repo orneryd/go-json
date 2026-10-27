@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	json "github.com/goccy/go-json"
+	json "github.com/orneryd/go-json"
 )
 
 // The decoders of arrays, slices, maps and interface{} allocate and assign through the reflect package.

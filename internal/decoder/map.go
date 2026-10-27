@@ -6,8 +6,8 @@ import (
 	"sync/atomic"
 	"unsafe"
 
-	"github.com/goccy/go-json/internal/errors"
-	"github.com/goccy/go-json/internal/runtime"
+	"github.com/orneryd/go-json/internal/errors"
+	"github.com/orneryd/go-json/internal/runtime"
 )
 
 type mapDecoder struct {
@@ -273,7 +273,7 @@ func (d *mapDecoder) DecodePath(ctx *RuntimeContext, cursor, depth int64) ([][]b
 	}
 	ret := [][]byte{}
 	for {
-		key, keyCursor, err := keyDecoder.decodeByte(buf, cursor)
+		key, keyCursor, err := keyDecoder.decodeByte(buf, cursor, preserveInvalidUTF8(ctx.Option.Flags))
 		if err != nil {
 			return nil, 0, err
 		}
