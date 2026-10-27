@@ -3,9 +3,9 @@
 Based on upstream goccy/go-json v0.11.2. Upstream license, source and test
 populations are retained. Module/import paths use github.com/orneryd/go-json so
 embedding applications consume the pinned dependency without local replace
-rules. The encoder remains upstream v0.11.2.
+rules. The encoder includes a cold-path map cycle-identity correction: newly allocated interface slots must retain the identity of their underlying map.
 
-The only behavioral delta is DecodePreserveInvalidUTF8, off by default. The flag
+The decoder delta is DecodePreserveInvalidUTF8, off by default. The flag
 belongs to each decode request or stream; cached decoders carry no mutable mode.
 It preserves raw string bytes after normal JSON grammar and escape handling.
 Lone escaped surrogates retain upstream behavior; NornicDB validates original

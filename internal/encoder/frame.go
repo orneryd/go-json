@@ -112,7 +112,13 @@ func (c *RuntimeContext) EnterInterface(code *Opcode, p unsafe.Pointer) (*Opcode
 	}
 	// after every path which doesn't go into the value, so that a record always has its end.
 	if c.RecursiveLevel > StartDetectingCyclesAfter {
-		if err := c.recordSeen(code, p); err != nil {
+		identity := p
+		if !codeSet.DataWordIsAddr {
+			// Map values copied into interface slots keep the same map data
+			// pointer even when each traversal allocates a fresh slot.
+			identity = ifacePtr
+		}
+		if err := c.recordSeen(code, identity); err != nil {
 			return nil, nil, false, err
 		}
 	}
