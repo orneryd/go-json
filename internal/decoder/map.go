@@ -20,8 +20,10 @@ type mapDecoder struct {
 	valuePtrType unsafe.Pointer
 	// isStringAnyMap is whether the map is a map[string]interface{}, which is decoded without reflect.
 	isStringAnyMap bool
-	keyDecoder     Decoder
-	valueDecoder   Decoder
+	// Only the exact runtime map type uses typed assignment; named map/key/value types retain their compiled decoder.
+	isStringStringMap bool
+	keyDecoder        Decoder
+	valueDecoder      Decoder
 	// keyUnsupported is set for a map whose keys encoding/json of the Go version doesn't decode ( see
 	// mapKeySupported ): an object is a type error.
 	keyUnsupported bool
@@ -49,18 +51,19 @@ type mapTemps struct {
 func newMapDecoder(mapType reflect.Type, keyType reflect.Type, keyDec Decoder, valueType reflect.Type, valueDec Decoder, structName, fieldName string) *mapDecoder {
 	_, isIfaceValue := valueDec.(*interfaceDecoder)
 	d := &mapDecoder{
-		mapType:        mapType,
-		keyDecoder:     keyDec,
-		keyType:        keyType,
-		valueType:      valueType,
-		mapTypePtr:     runtime.TypePtr(mapType),
-		keyPtrType:     ptrTypeOf(keyType),
-		valuePtrType:   ptrTypeOf(valueType),
-		isStringAnyMap: mapType == interfaceMapType && isIfaceValue,
-		valueDecoder:   valueDec,
-		keyUnsupported: !mapKeySupported(keyType, keyDec),
-		structName:     structName,
-		fieldName:      fieldName,
+		mapType:           mapType,
+		keyDecoder:        keyDec,
+		keyType:           keyType,
+		valueType:         valueType,
+		mapTypePtr:        runtime.TypePtr(mapType),
+		keyPtrType:        ptrTypeOf(keyType),
+		valuePtrType:      ptrTypeOf(valueType),
+		isStringAnyMap:    mapType == interfaceMapType && isIfaceValue,
+		isStringStringMap: mapType == reflect.TypeOf(map[string]string{}),
+		valueDecoder:      valueDec,
+		keyUnsupported:    !mapKeySupported(keyType, keyDec),
+		structName:        structName,
+		fieldName:         fieldName,
 	}
 	d.temps.New = func() any {
 		t := &mapTemps{k: newValue(keyType), v: newValue(valueType)}
@@ -160,6 +163,9 @@ func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.P
 	}
 	if d.keyUnsupported {
 		return ctx.unsupportedMapKeys(d, cursor, depth-1, p)
+	}
+	if d.isStringStringMap {
+		return d.decodeStringMap(ctx, cursor, depth, p)
 	}
 	if d.isStringAnyMap {
 		m := *(*map[string]any)(p)
@@ -320,6 +326,56 @@ func (d *mapDecoder) DecodePath(ctx *RuntimeContext, cursor, depth int64) ([][]b
 		}
 		if buf[cursor] != ',' {
 			return nil, 0, errors.ErrExpected("comma after object value", cursor)
+		}
+		cursor++
+	}
+}
+
+// decodeStringMap uses the same compiled scalar decoders and object grammar as
+// Decode. Concrete scalar calls keep the reusable zero key/value slots on the
+// stack, avoiding reflect temporaries and their allocation pool. Named map,
+// key, and value types deliberately retain generic Decode dispatch.
+func (d *mapDecoder) decodeStringMap(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
+	buf := ctx.Buf
+	cursor++
+	cursor = skipWhiteSpace(buf, cursor)
+	m := *(*map[string]string)(p)
+	if m == nil {
+		m = make(map[string]string, int(d.lastLen.Load()))
+	}
+	if buf[cursor] == '}' {
+		*(*map[string]string)(p) = m
+		return cursor + 1, nil
+	}
+	keyDecoder := d.keyDecoder.(*stringDecoder)
+	valueDecoder := d.valueDecoder.(*stringDecoder)
+	var key, value string
+	n := int32(0)
+	for {
+		keyCursor, err := keyDecoder.Decode(ctx, cursor, depth, unsafe.Pointer(&key))
+		if err != nil {
+			return 0, err
+		}
+		cursor = skipWhiteSpace(buf, keyCursor)
+		if buf[cursor] != ':' {
+			return 0, errors.ErrExpected("colon after object key", cursor)
+		}
+		cursor++
+		valueCursor, err := valueDecoder.Decode(ctx, cursor, depth, unsafe.Pointer(&value))
+		if err != nil {
+			return 0, err
+		}
+		m[key] = value
+		key, value = "", ""
+		n++
+		cursor = skipWhiteSpace(buf, valueCursor)
+		if buf[cursor] == '}' {
+			*(*map[string]string)(p) = m
+			d.lastLen.Store(min(n, maxMapSizeHint))
+			return cursor + 1, nil
+		}
+		if buf[cursor] != ',' {
+			return 0, errors.ErrExpected("comma after object value", cursor)
 		}
 		cursor++
 	}
