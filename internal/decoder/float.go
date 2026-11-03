@@ -1,7 +1,6 @@
 package decoder
 
 import (
-	"math"
 	"reflect"
 	"strconv"
 	"unsafe"
@@ -21,14 +20,6 @@ type floatDecoder struct {
 
 func newFloatDecoder(structName, fieldName string, op func(unsafe.Pointer, float64)) *floatDecoder {
 	return &floatDecoder{op: op, structName: structName, fieldName: fieldName, typ: reflect.TypeOf(float64(0))}
-}
-
-// overflowsFloat32 reports whether f is out of the range of a float32, as reflect.Value.OverflowFloat does.
-func overflowsFloat32(f float64) bool {
-	if f < 0 {
-		f = -f
-	}
-	return math.MaxFloat32 < f && f <= math.MaxFloat64
 }
 
 var (
@@ -108,7 +99,9 @@ type float32Decoder struct {
 func (d *float32Decoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
 	buf := ctx.Buf
 	cursor = skipWhiteSpace(buf, cursor)
-	if f, next, ok := parseFloatFast(buf, cursor); ok && validEndNumberChar[buf[next]] && !overflowsFloat32(f) {
+	// A float64 intermediate is safe only when it is already an exact float32.
+	// Otherwise parsing again at 32 bits avoids rounding twice at a midpoint.
+	if f, next, ok := parseFloatFast(buf, cursor); ok && validEndNumberChar[buf[next]] && float64(float32(f)) == f {
 		d.op(p, f)
 		return next, nil
 	}
@@ -134,9 +127,14 @@ func (d *floatDecoder) decodeSlow(ctx *RuntimeContext, cursor, depth int64, p un
 			return 0, err
 		}
 		b := buf[cursor:end]
-		f, parseErr := strconv.ParseFloat(*(*string)(unsafe.Pointer(&b)), 64)
-		// a number of the grammar which ParseFloat fails is out of the range of float64
-		if inRange := parseErr == nil && !(d.is32 && overflowsFloat32(f)); !inRange {
+		bits := 64
+		if d.is32 {
+			bits = 32
+		}
+		// Parse at the destination precision: parsing through float64 can
+		// double-round a float32, or reject a decimal that rounds to MaxFloat32.
+		f, parseErr := strconv.ParseFloat(*(*string)(unsafe.Pointer(&b)), bits)
+		if parseErr != nil {
 			ctx.numberTypeError(cursor, end, d.typ)
 			if storesFloatsOutOfRange {
 				// ±Inf, which ParseFloat returns, or which the conversion to a float32 makes
